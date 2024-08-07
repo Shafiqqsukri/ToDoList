@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:todos/widgets/add.dart';
 import 'package:todos/widgets/detail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,35 +12,69 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<Map<String, dynamic>> _todos = [
-    {
-      "name": "Learn Navigation",
-      "description": "Learn Basic Navigation",
-      "place": "Online meet",
-      "completed":true
-    },
-    {
-      "name": "Learn ListView",
-      "description": "ListView and ListTile",
-      "place": "Online Meet",
-      "completed":true
+  var _todos = [];
+  // List<Map<String, dynamic>> _todos = [
+    // {
+    //   "name": "Learn Navigation",
+    //   "description": "Learn Basic Navigation",
+    //   "place": "Online meet",
+    //   "completed":true
+    // },
+    // {
+    //   "name": "Learn ListView",
+    //   "description": "ListView and ListTile",
+    //   "place": "Online Meet",
+    //   "completed":true
+    //
+    // },
+    // {
+    //   "name": "Have Lunch",
+    //   "description": "1h lunch break",
+    //   "place": "Own home/office",
+    //   "completed":true
+    //
+    // },
+    // {
+    //   "name": "Storage",
+    //   "description": "Using shared pref",
+    //   "place": "Online meet",
+    //   "completed":false
+    //
+    // }
+  // ];
 
-    },
-    {
-      "name": "Have Lunch",
-      "description": "1h lunch break",
-      "place": "Own home/office",
-      "completed":true
+  // Override initstate to do intialization in this page
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    loadData();
+  }
 
-    },
-    {
-      "name": "Storage",
-      "description": "Using shared pref",
-      "place": "Online meet",
-      "completed":false
-
+  void loadData() async{
+    // Get the file manager
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    var stringTodos = prefs.getString("todos");
+    if (stringTodos != null){
+      setState(() {
+        _todos = jsonDecode(stringTodos); // Transform String to List<dynamic>
+      });
     }
-  ];
+
+  }
+
+  void saveData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance(); // RETRIEVE THE FILE MANAGER
+    // SAVEE!!
+
+    // setString (Save as String)
+    // Shared pref can only be stored in String, int, double , List<String>
+    // If you want to store List<Map<String,dynamic> we use jsonEncode to transform List<Map<String,dynamic> to String
+    prefs.setString("todos", jsonEncode(_todos));
+  }
+
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +106,8 @@ class _HomePageState extends State<HomePage> {
                     if (response["action"] == 1){
                     // Delete
                     _todos.removeAt(response["index"]);
+                    saveData();
+
                     setState(() {
                     _todos;
                     });
@@ -77,6 +115,7 @@ class _HomePageState extends State<HomePage> {
                   else {
                   // Mark as complete
                       _todos[response["index"]]["completed"] = ! _todos[response["index"]]["completed"];
+                      saveData();
                       setState(() {
                       _todos;
                     });
@@ -94,6 +133,9 @@ class _HomePageState extends State<HomePage> {
           var item = await Navigator.push(context, MaterialPageRoute(builder: (context)=>AddPage()));
           if (item != null){
             _todos.add(item);
+            saveData();
+
+
             setState(() {
               _todos ; // same as _todos = _todos (refresh the UI)
             });
